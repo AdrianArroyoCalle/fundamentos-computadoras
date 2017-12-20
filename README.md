@@ -1,2 +1,8 @@
 # fundamentos-computadoras
-Fundamentos de Computadoras
+Fundamentos y Arquitectura de Computadoras
+
+```
+make clean
+make
+```
+

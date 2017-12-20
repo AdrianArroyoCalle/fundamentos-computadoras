@@ -1,0 +1,196 @@
+\documentclass[a4]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{datetime}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+\usepackage{vmargin}
+\usepackage{textcomp}
+
+\setmargins{2.5cm}       % margen izquierdo
+{1.5cm}                        % margen superior
+{16.5cm}                      % anchura del texto
+{23.42cm}                    % altura del texto
+{10pt}                           % altura de los encabezados
+{1cm}                           % espacio entre el texto y los encabezados
+{0pt}                             % altura del pie de página
+{2cm}                           % espacio entre el texto y el pie de página
+
+
+\title{Diario de Computadoras - Grupo 9}
+\author{Adrián Arroyo Calle \and Sergio Alonso Pascual}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\newdate{primera}{19}{09}{2017}
+\section*{\date{\displaydate{primera}}}
+
+Retomamos la aventura del MIPS en este nuevo curso académico. Desempolvamos el simulador MARS, copiamos los datos de partida y analizamos el enunciado.
+
+Recordamos como se hacían estos bucles así como la aritmética de punteros. Después implementamos la parte de mostrar en pantalla en mitad del bucle y finalmente introducimos un salto condicional para evitar añadir una coma al final.
+
+En el siguiente apartado estudiaremos las instrucciones sintéticas y por que instrucciones se sustituyen:
+\begin{itemize}
+    \item \textbf{la}: esta instrucción se sustituye por las instrucciones \textbf{lui} y \textbf{ori}
+    \item \textbf{li}: esta instrucción para cargar constantes a un registro se traduce por \textbf{addiu} cuando el valor a cargar es de 16 bits o menos.
+    \item \textbf{beq}: esta instrucción es sintética porque la hemos utilizado con una constante. 
+    \item \textbf{bnez}: esta instrucción es equivalente a hacer \textbf{bne} con el registro \textbf{\$zero}.
+\end{itemize}
+
+Accedemos a la ayuda de MARS para encontrar alguna instrucción sintética más. Encontramos \textbf{abs}, que calcula el valor absoluto de un número. Esta se traduce por 3 instrucciones naturales: \textbf{sra}, \textbf{xor} y \textbf{subu}.
+
+Desactivamos la opción del uso de instrucciones sintéticas y vemos con horror como nuestro programa deja de compilar. Reescribimos el programa y confirmamos que se ha perdido mucha legibilidad respecto a la versión con pseudoinstrucciones.
+
+El simulador QtSpim traduce las pseudoinstrucciones de forma diferente. Algunos ejemplos:
+
+\begin{itemize}
+\item \textbf{li} en QtSpim es \textbf{ori}
+\item \textbf{beq} sintético use \textbf{ori} en vez de \textbf{addi}
+\item \textbf{abs} en QtSpim solo requiere de dos instrucciones: \textbf{bgez} y \textbf{sub}
+\end{itemize}
+
+\newdate{segunda}{26}{09}{2017}
+\section*{\date{\displaydate{segunda}}}
+
+Comenzamos el día de MIPS descubriendo para nuestro asombro la existencia de un clon de Space Invaders realizado en MIPS y compatible con el simulador MARS. Se encuentra aquí: \url{https://github.com/Ricardo96r/Space-Invaders-MIPS-Assembly}. Analizando el código de ese programa descubrimos la existencia de las macros. Inmediatamente nos damos cuenta que pueden facilitarnos la vida haciendo el código más legible, menos propenso a errores y nosotros más productivos con él. Las macros sustituyen a código cuando se realiza el ensamblado, por lo que desde el punto de vista de la máquina no existen, sin embargo proveen de una sintaxis en cierto sentido parecida a los procedimientos de los lenguajes de alto nivel.
+
+Posteriormente comenzamos la escritura del primer apartado de la práctica, que pide trasponer la matriz. Para ello calculamos la i (\textbf{\$t1}) y la j (\textbf{\$t2}) de cada elemento y posteriormente cargamos en registro los datos de A[i][j] y de A[j][i] y lo intercambiamos.
+
+Recorremos la matriz solo sobre la diagonal superior, ya que la parte inferior se modifica de forma simétrica.
+
+Posteriormente trabajamos en la suma de matrices, simplemente cargando los 3 punteros, ir leyendo de las dos matrices sumando y dejando el resultado en la matriz final.
+
+\newdate{tercera}{29}{09}{2017}
+\section*{\date{\displaydate{tercera}}}
+
+Empezamos el ejercicio entregable añadiendo la parte de leer matrices. Implementamos la lectura de la matriz y al comprobar que funciona pasamos el funcionamiento a una nueva macro, \textbf{read\_matrix}. De esta forma ahorramos código y hacemos dos llamadas a la macro, para la primera matriz y para la segunda. Después llamamos a las funciones trasponer y sumar, programadas días anteriores, y finalmente mostramos la matriz en pantalla. Para ello hemos programado una macro llamada \textbf{print\_matrix}.
+
+Al realizar esta parte descubrimos un misterioso error y era que si reservábamos el espacio en memoria antes para las frases para el usuario que para las matrices, el programa nos daba un error. Pero si el espacio para las frases iba después de las matrices, el error no pasaba.
+
+\newdate{cuarta}{03}{10}{2017}
+\section*{\date{\displaydate{cuarta}}}
+
+Analizamos la \textit{endianess} del simulador MARS. Para ello diseñamos un programa que cargue un word con el siguiente valor: 0xFF000000. A continuación cargamos el primer byte con \textbf{lb}. Si el simulador fuese little-endian, la lectura de ese byte nos daría 0x00, si fuese big-endian, nos daría 0xFF.
+
+De este modo comprobamos que MARS es Little-Endian. Probamos el mismo programa en QtSpim. Comprobamos que QtSpim no tiene macros. Pese a la adversidad, comprobamos que QtSpim es también Little-Endian.
+
+Ahora comprobamos si un número es negativo o positivo leyendo solo un byte y ya sabiendo que MARS trabaja en modo little-endian. Los números se almacenan en complemento a 2, con lo cual el primer bit es el signo. Como es little-endian, leemos el byte más alto, con \textbf{3(\$t0)}. Una vez está cargado aplicamos una máscara con 0x0080 y \textbf{and}. Si el resultado es \$zero, el número es positivo. Si no lo es, es negativo.
+
+En el siguiente apartado comprobaremos el signo de números en punto flotante, tras un breve recordatorio del temario del año pasado sobre el estándar IEEE-754 nos damos cuenta de que al estar el bit de signo en la misma posición que en los números enteros el programa del apartado anterior sirve también para coma flotante de simple precisión, no obstante para doble precisión al ser 64 bits debemos cargar el byte 7º en lugar del 3º.
+
+Ahora declaramos una matriz de 4x4, que recorremos y sumamos todo. Para ello tenemos un contador que va descendiendo hasta llegar a \$zero y vamos aumentando el puntero de 4 en 4. Para hacerlo por columnas, modificamos el orden y aplicamos una función para ir accediendo al elemento correcto.
+
+Si ahora cambiamos los números de estar almacenados como WORD  a BYTE, tenemos que modificar la declaración. Tenemos que modificar el sumador del puntero (ahora suma 1 en vez de 4) y la instrucción de carga pasa a ser \textbf{lb} en vez de \textbf{lw}. No nos dimos cuenta de cambiar \textbf{lw} y nos salió un error de "Error, dirección no alineada", ya que MIPS no deja leer de forma no alineada.
+
+Luego probamos el MIPS X-Ray.
+
+Los colores representan los datos que lleva una conexión. Las conexiones del mismo color llevan los mismos bits a 1 y a 0.
+
+El camino crítico es el camino que finaliza más tarde, teniendo en cuenta que MIPS X-Ray añade los retardos adecuados en cada unidad.
+
+La representación es bastante acertada en nuestra humilde opinión.
+
+\newdate{quinta}{09}{10}{2017}
+\section*{\date{\displaydate{quinta}}}
+Comenzamos la practica de hoy que versa sobre la conversión de datos.
+Plantearemos el primer ejercicio usando una máscara para seleccionar los 4 bits más a la derecha (0x0000000F). Posteriormente le sumamos 48 para convertirlo en un dígito ASCII y si se pasa del dígito 9 le sumamos otros 7 para que sea una letra ASCII, todo esto dentro de un bucle que va desplazando el número inicial 4 bits a la derecha cada vez.
+
+Para almacenar de forma adecuada la cadena, disponemos de un contador, que en cada iteración se resta uno. El puntero para guardar el byte se calcula sumando el contador a la dirección de memoria base. Podría decirse que vamos escribiendo la cadena "al revés".
+
+En el siguiente ejercicio empleamos los macros para pedir un entero por teclado y la función del ejercicio anterior para transformarlo en hexadecimal codificado en ASCII. Para el apartado c simplemente usamos un \textit{addi}.
+
+Nos atrevemos a probar con números de 64 bits. Simplemente llamamos a la función dos veces. La segunda vez aumentamos el puntero a la cadena en 8 bytes.
+
+\newdate{sexta}{10}{10}{2017}
+\section*{\date{\displaydate{sexta}}}
+
+En clase de teoría, el profesor nos hace ver un fallo que tenía el programa, en la parte de 64 bits. Resulta que habíamos definido la parte alta del número con los 32 bits más bajos en memoria. Al ser una máquina Little Endian esto no tenía sentido. Afortunadamente solo cambiando el desplazamiento o \textit{shamt} de las instrucciones \textbf{lw} conseguimos que funcione de forma coherente.
+
+\newdate{septima}{16}{10}{2017}
+\section*{\date{\displaydate{septima}}}
+
+Ahora toca hacer la función inversa a la del día pasado. Es sensiblemente más complicado, debido a que pueden darse errores en la conversión. Para realizar la conversión, leemos en bucle una cadena de caracteres, hasta encontrar el carácter \textbf{\setminus 0} o el caracter \textbf{\setminus n}. Después restamos 55 y comprobamos si es una letra o un número. Si es un número sumamos 7. Esto lo hacemos \textbf{or} a \$v0, que previamente ha recibido un \textbf{sll} de 4 posiciones.
+
+Posterioremente añadimos comprobación de errores extra. Para comprobar que el caracter es correcto, tenemos una amplia gama de \textbf{beq}s que comprueban el rango. Además añadimos códigos de error en \$v1.
+
+Para comprobar que el número introducido entra en registro, mantenemos un contador con el límite máximo de bytes que podemos cargar en un registro.
+
+Para la parte final reutilizamos el código de la función del día anterior. Para hacer el número opuesto hacemos \textbf{sub \$s0, \$zero, \$s0}
+
+\newdate{octava}{18}{10}{2017}
+\section*{\date{\displaydate{octava}}}
+
+Añadimos una mejora de usabilidad, consistente en que si el usuario ha introducido un dato incorrecto, después de mostrársele el error, se le vuelve a dejar introducir el número.
+
+\newdate{novena}{23}{10}{2017}
+\section*{\date{\displaydate{novena}}}
+
+Nos enfrentamos al reto más complicado. No sabemos exactamente muy bien como abordar el problema. Finalmente optamos por multiplicar cada cifra por 10 elevado a su posición. Aprendemos entonces la instrucción \textbf{mul} y vemos como podemos calcular potencias en base 10. 
+
+Para ello primero hacemos un bucle que nos cuenta el número de cifras que tiene el número. Una vez hecho eso volvemos a empezar otro bucle en el que recorremos las cifras, restando de su valor ASCII 48 para pasarlo a decimal y calculando su 10 elevado a N correspodiente. Finalmente multiplicamos el número de la cifra por su valor en base 10. Finalmente lo sumamos a \$v0, donde vamos acumulando la suma de cada cifra. 
+
+Para comprobar si es negativo, comprobamos el primer caracter y si es un signo menos dejamos una flag. Con esta flag multiplicamos por -1 al final de la función si está activa.
+
+\newdate{decima}{30}{10}{2017}
+\section*{\date{\displaydate{decima}}}
+
+Esta es la última práctica guiada. Hay que realizar la conversión de binario a decimal en ASCII. Para ello usamos las instrucciones \textbf{div}, \textbf{mfhi} (resto) y \textbf{mflo} (cociente). La idea es ir diviendo el número entre 10 y pasar el resto a ASCII. Posteriormente repetir la división con el cociente y así hasta que el cociente sea menor de 10. Como generamos la cadena al revés, la invertimos usando una función que hicimos el año pasado.
+
+Posteriormente para el entregable recurrimos a las funciones hechas los días anteriores y conseguimos hacer el programa en poco tiempo (aunque tenemos demasiadas etiquetas llamadas \textit{bucle})
+
+\newdate{undecima}{6}{11}{2017}
+\section*{\date{\displaydate{undecima}}}
+
+Nos han dado el enunciado de la práctica final. Se trata de un programa calculadora, capaz de leer una cadena de texto y operar en el orden correcto. 
+
+Para ellos usaremos el algoritmo de Shunting-Yard. \url{https://en.wikipedia.org/wiki/Shunting-yard_algorithm}, con un buen resumen encontrado en: \url{https://stackoverflow.com/questions/28256/equation-expression-parser-with-precedence}. El sistema no tiene en cuenta los paréntesis, pero nosotros lo implementaremos.
+
+Lo primero que hacemos es tener dos pilas: una para guardar operandos y otra para guardar operadores. Para implementar las pilas reservamos memoria suficientemete grande y diseñamos unas macros para hacer las operaciones de \textbf{push/pop}. Para almacenar los punteros a las pilas usamos \textbf{\$s0} y \textbf{\$s1}.
+
+\newdate{duodecima}{13}{11}{2017}
+\section*{\date{\displaydate{duodecima}}}
+
+Lo primero que hacemos hoy es una función para eliminar los espacios de una cadena. Esto nos permitirá ignorar completamente los espacios que pueda introducir el usuario en la Cadena de Cálculo\texttrademark . Posteriormente iniciamos una función que lea los números y los almacene en una pila, ignorando los símbolos.
+
+\newdate{decimotercera}{20}{11}{2017}
+\section*{\date{\displaydate{decimotercera}}}
+
+Mejoramos algunos fallos que teníamos con la parte de guardar números y operadores en la pila.
+
+
+
+\newdate{decimocuarta}{23}{11}{2017}
+\section*{\date{\displaydate{decimocuarta}}}
+
+Una vez ya tenemos cargados números y operadores en las pilas trabajamos en la parte final. Cuando la cadena termina realizamos las sumas y restas libres (son los elementos con menor precedencia de todos). Para ello, y como podemos destruir las pilas, creamos la función sumar que recorre las pilas desde el principio (principalmente para respetar el orden de las restas). Hubo algún problema con las cadenas \textit{1+1-1+1} y \textit{1-1+6-1} pero finalmente se solucionaron. 
+
+Queda por implementar las operaciones de precedencia superior, multiplicaciones y divisiones, así como los paréntesis.
+
+\newdate{decimoquinta}{01}{12}{2017}
+\section*{\date{\displaydate{decimoquinta}}}
+
+Probamos a implementar las multiplicaciones y divisiones. Funciona correctamente. El cómputo se realiza al terminar de introducir un número de una multiplicación o división. Comprobamos el operador para ello, y si lo es, hacemos la operación. El objetivo es tener solo sumas y restas cuando se haya llegado al final de leer la cadena de cálculo. Tratamos de implementar los paréntesis también, de modo similar a las multiplicaciones y divisiones, no obstante, nos damos cuenta que la actual función sumar es incompatible con su uso en los paréntesis, por lo que debemos parchearla.
+
+\newdate{decimosexta}{04}{12}{2017}
+\section*{\date{\displaydate{decimosexta}}}
+
+Reescribimos la función sumar para usar pilas, en vez de destrozar las pilas. De ese modo podremos usarlo para paréntesis, pero para ello le quitamos la opción de que haya restas. Lo que hacemos entonces es al detectar una resta en la entrada, introducimos el número opuesto en la pila. De ese modo, todo son sumas.
+
+Así pues programamos el colapso de paréntesis y da resultados correctos. No planeamos añadir funcionalidad extra a partir de aquí.
+
+Adicionalmente empezamos a añadir más control de errores con las interrupciones o traps de MIPS.
+
+\newdate{decimoseptima}{11}{12}{2017}
+\section*{\date{\displaydate{decimoseptima}}}
+
+Añadimos control de overflow a las operaciones usando traps. Esto nos permite que add lance la excepción automáticamente mientras que con mul tenemos que comprobarla a mano, no obstante, sigue siendo muy sencillo y apenas emborrona el código.
+
+\newdate{decimoctava}{12}{12}{2017}
+\section*{\date{\displaydate{decimoctava}}}
+
+Añadimos soporte para números en hexadecimal a la vez que números en decimal. Para ello tenemos una flag o bandero que nos indica si el número que estamos leyendo es hexadecimal o no. Esta flag se activa al detectar una x y que haya habido un cero delante. Se desactiva al llamar a finnumero.
+
+\end{document}
